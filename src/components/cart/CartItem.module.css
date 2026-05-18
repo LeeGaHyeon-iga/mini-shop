@@ -1,0 +1,151 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .item {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+}
+
+.imageLink {
+  flex-shrink: 0;
+}
+
+.image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .image {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  display: block;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name:hover {
+  color: #3b82f6;
+}
+
+.price {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.originalPrice {
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-size: 0.8125rem;
+}
+
+.quantityControls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.quantityButton {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background-color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.quantityButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.quantityButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantityValue {
+  width: 48px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+}
+
+.total {
+  text-align: right;
+  min-width: 100px;
+}
+
+.totalLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.totalPrice {
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.removeButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  color: #6b7280;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .total {
+    order: 4;
+    width: 100%;
+    text-align: left;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 0.5rem;
+  }
+
+  .removeButton {
+    order: 3;
+  }
+}

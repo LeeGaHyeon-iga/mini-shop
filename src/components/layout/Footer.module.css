@@ -1,0 +1,65 @@
+.footer {
+  background-color: #1f2937;
+  color: #9ca3af;
+  padding: 3rem 1rem;
+  margin-top: auto;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.info {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  font-size: 0.875rem;
+}
+
+.links {
+  display: flex;
+  gap: 4rem;
+  margin-bottom: 2rem;
+}
+
+.linkGroup {
+  font-size: 0.875rem;
+}
+
+.linkGroup p {
+  margin: 0.25rem 0;
+}
+
+.linkTitle {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.copyright {
+  padding-top: 1.5rem;
+  border-top: 1px solid #374151;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.copyright p {
+  margin: 0.25rem 0;
+}
+
+@media (max-width: 768px) {
+  .links {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
