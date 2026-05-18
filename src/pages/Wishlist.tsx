@@ -1,48 +1,37 @@
-import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import type { WishlistItem } from '../types';
-import { wishlistApi, getImageUrl } from '../utils/api';
-import { formatPrice, getDiscountedPrice } from '../utils/cart';
-import { useCart } from '../contexts/CartContext';
-import { Spinner, Button } from '../components/common';
-import styles from './Wishlist.module.css';
+import { Link, NavLink } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import type { WishlistItem } from "../types";
+import { wishlistApi, getImageUrl } from "../utils/api";
+import { formatPrice, getDiscountedPrice } from "../utils/cart";
+import { useCart } from "../contexts/CartContext";
+import { Spinner, Button } from "../components/common";
+import styles from "./Wishlist.module.css";
 
 export default function Wishlist() {
   const { addItem } = useCart();
-  const [items, setItems] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchWishlist();
-  }, []);
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: wishlistApi.getAll,
+  });
 
-  const fetchWishlist = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await wishlistApi.getAll();
-      setItems(response.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '찜 목록을 불러오는데 실패했습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const items = data?.items ?? [];
 
   const handleRemove = async (productId: number) => {
     try {
       await wishlistApi.remove(productId);
-      setItems((prev) => prev.filter((item) => item.productId !== productId));
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     } catch (err) {
-      alert(err instanceof Error ? err.message : '삭제에 실패했습니다');
+      alert(err instanceof Error ? err.message : "삭제에 실패했습니다");
     }
   };
 
   const handleAddToCart = (item: WishlistItem) => {
     if (!item.product) return;
     addItem(item.product, 1);
-    alert('장바구니에 추가되었습니다.');
+    alert("장바구니에 추가되었습니다.");
   };
 
   return (
@@ -54,19 +43,25 @@ export default function Wishlist() {
           <NavLink
             to="/mypage"
             end
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             내 정보
           </NavLink>
           <NavLink
             to="/mypage/orders"
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             주문 내역
           </NavLink>
           <NavLink
             to="/mypage/wishlist"
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             찜 목록
           </NavLink>
@@ -76,12 +71,16 @@ export default function Wishlist() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>찜 목록</h2>
 
-            {loading ? (
+            {isLoading ? (
               <Spinner />
-            ) : error ? (
+            ) : isError ? (
               <div className={styles.error}>
-                <p>{error}</p>
-                <Button onClick={fetchWishlist}>다시 시도</Button>
+                <p>
+                  {error instanceof Error
+                    ? error.message
+                    : "찜 목록을 불러오는데 실패했습니다"}
+                </p>
+                <Button onClick={() => refetch()}>다시 시도</Button>
               </div>
             ) : items.length === 0 ? (
               <div className={styles.empty}>
@@ -94,10 +93,11 @@ export default function Wishlist() {
               <div className={styles.items}>
                 {items.map((item) => {
                   if (!item.product) return null;
+
                   const product = item.product;
                   const discountedPrice = getDiscountedPrice(
                     product.price,
-                    product.discount
+                    product.discount,
                   );
 
                   return (
@@ -110,7 +110,9 @@ export default function Wishlist() {
                           src={getImageUrl(product.image)}
                           alt={product.name}
                           className={styles.image}
-                          onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
                         />
                       </Link>
 
@@ -121,6 +123,7 @@ export default function Wishlist() {
                         >
                           {product.name}
                         </Link>
+
                         <div className={styles.priceWrapper}>
                           {!!product.discount && product.discount > 0 && (
                             <>
@@ -144,8 +147,9 @@ export default function Wishlist() {
                           onClick={() => handleAddToCart(item)}
                           disabled={product.stock === 0}
                         >
-                          {product.stock === 0 ? '품절' : '장바구니'}
+                          {product.stock === 0 ? "품절" : "장바구니"}
                         </Button>
+
                         <Button
                           size="small"
                           variant="outline"

@@ -1,59 +1,49 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import type { Product } from '../types';
-import { productApi, wishlistApi, getImageUrl } from '../utils/api';
-import { formatPrice, getDiscountedPrice } from '../utils/cart';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { Button, Spinner } from '../components/common';
-import { MIN_QUANTITY, MAX_QUANTITY } from '../utils/constants';
-import styles from './ProductDetail.module.css';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { productApi, wishlistApi, getImageUrl } from "../utils/api";
+import { formatPrice, getDiscountedPrice } from "../utils/cart";
+import { useCart } from "../contexts/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { Button, Spinner } from "../components/common";
+import { MIN_QUANTITY, MAX_QUANTITY } from "../utils/constants";
+import styles from "./ProductDetail.module.css";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const { addItem, isInCart } = useCart();
   const { isAuthenticated } = useAuth();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const productId = Number(id);
+
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
+  const {
+    data: productData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["product", productId],
+    queryFn: () => productApi.getById(productId),
+    enabled: !!id && !Number.isNaN(productId),
+  });
 
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await productApi.getById(Number(id));
-        setProduct(response.product);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '상품을 불러오는데 실패했습니다');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: wishlistData } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: wishlistApi.getAll,
+    enabled: isAuthenticated,
+  });
 
-    fetchProduct();
-  }, [id]);
+  const product = productData?.product;
 
-  // 로그인 상태일 때 현재 상품의 찜 여부 조회
-  useEffect(() => {
-    if (!isAuthenticated || !id) return;
-
-    wishlistApi.getAll()
-      .then((response) => {
-        const wishlisted = response.items.some(
-          (item) => item.productId === Number(id)
-        );
-        setIsWishlisted(wishlisted);
-      })
-      .catch(() => {});
-  }, [isAuthenticated, id]);
+  const isWishlisted =
+    wishlistData?.items.some((item) => item.productId === productId) ?? false;
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => {
@@ -65,49 +55,52 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
     addItem(product, quantity);
-    alert('장바구니에 추가되었습니다.');
+    alert("장바구니에 추가되었습니다.");
   };
 
   const handleBuyNow = () => {
     if (!product) return;
     addItem(product, quantity);
-    navigate('/cart');
+    navigate("/cart");
   };
 
   const handleWishlistToggle = async () => {
     if (!product) return;
 
     if (!isAuthenticated) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
+      alert("로그인이 필요합니다.");
+      navigate("/login");
       return;
     }
 
     try {
       setWishlistLoading(true);
+
       if (isWishlisted) {
         await wishlistApi.remove(product.id);
-        setIsWishlisted(false);
       } else {
         await wishlistApi.add(product.id);
-        setIsWishlisted(true);
       }
+
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     } catch (err) {
-      alert(err instanceof Error ? err.message : '오류가 발생했습니다');
+      alert(err instanceof Error ? err.message : "오류가 발생했습니다");
     } finally {
       setWishlistLoading(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Spinner size="large" />;
   }
 
-  if (error || !product) {
+  if (isError || !product) {
     return (
       <div className={styles.error}>
-        <p>{error || '상품을 찾을 수 없습니다'}</p>
-        <Button onClick={() => navigate('/products')}>상품 목록으로</Button>
+        <p>
+          {error instanceof Error ? error.message : "상품을 찾을 수 없습니다"}
+        </p>
+        <Button onClick={() => navigate("/products")}>상품 목록으로</Button>
       </div>
     );
   }
@@ -123,11 +116,11 @@ export default function ProductDetail() {
           src={getImageUrl(product.image)}
           alt={product.name}
           className={styles.image}
-          onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.svg";
+          }}
         />
-        {product.badge && (
-          <span className={styles.badge}>{product.badge}</span>
-        )}
+        {product.badge && <span className={styles.badge}>{product.badge}</span>}
       </div>
 
       <div className={styles.infoSection}>
@@ -146,7 +139,7 @@ export default function ProductDetail() {
         </div>
 
         <p className={styles.description}>
-          {product.description || '상품 설명이 없습니다.'}
+          {product.description || "상품 설명이 없습니다."}
         </p>
 
         <div className={styles.stock}>
@@ -186,20 +179,24 @@ export default function ProductDetail() {
 
         <div className={styles.actions}>
           <button
-            className={`${styles.wishlistButton} ${isWishlisted ? styles.wishlisted : ''}`}
+            className={`${styles.wishlistButton} ${
+              isWishlisted ? styles.wishlisted : ""
+            }`}
             onClick={handleWishlistToggle}
             disabled={wishlistLoading}
-            aria-label={isWishlisted ? '찜 해제' : '찜하기'}
+            aria-label={isWishlisted ? "찜 해제" : "찜하기"}
           >
-            {isWishlisted ? '♥' : '♡'}
+            {isWishlisted ? "♥" : "♡"}
           </button>
+
           <Button
             variant="secondary"
             onClick={handleAddToCart}
             disabled={isOutOfStock || isInCart(product.id)}
           >
-            {isInCart(product.id) ? '장바구니에 있음' : '장바구니'}
+            {isInCart(product.id) ? "장바구니에 있음" : "장바구니"}
           </Button>
+
           <Button onClick={handleBuyNow} disabled={isOutOfStock}>
             바로 구매
           </Button>

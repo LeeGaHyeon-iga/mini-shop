@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, Navigate } from 'react-router-dom';
-import type { Order } from '../types';
-import { orderApi, getImageUrl } from '../utils/api';
-import { formatPrice } from '../utils/cart';
-import { Button, Spinner } from '../components/common';
-import styles from './OrderComplete.module.css';
+import { Link, useLocation, Navigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { orderApi, getImageUrl } from "../utils/api";
+import { formatPrice } from "../utils/cart";
+import { Button, Spinner } from "../components/common";
+import styles from "./OrderComplete.module.css";
 
 interface LocationState {
   orderId?: number;
@@ -14,17 +14,13 @@ export default function OrderComplete() {
   const location = useLocation();
   const orderId = (location.state as LocationState)?.orderId;
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: () => orderApi.getById(orderId as number),
+    enabled: !!orderId,
+  });
 
-  useEffect(() => {
-    if (!orderId) return;
-
-    orderApi.getById(orderId)
-      .then((res) => setOrder(res.order))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [orderId]);
+  const order = data?.order;
 
   if (!orderId) {
     return <Navigate to="/" replace />;
@@ -37,7 +33,7 @@ export default function OrderComplete() {
         <h1 className={styles.title}>주문이 완료되었습니다</h1>
         <p className={styles.orderId}>주문번호: {orderId}</p>
 
-        {loading ? (
+        {isLoading ? (
           <Spinner />
         ) : order ? (
           <div className={styles.summary}>
@@ -48,14 +44,18 @@ export default function OrderComplete() {
                     src={getImageUrl(item.image)}
                     alt={item.productName}
                     className={styles.itemImage}
-                    onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                    }}
                   />
+
                   <div className={styles.itemInfo}>
                     <span className={styles.itemName}>{item.productName}</span>
                     <span className={styles.itemMeta}>
                       {formatPrice(item.price)}원 · {item.quantity}개
                     </span>
                   </div>
+
                   <span className={styles.itemTotal}>
                     {formatPrice(item.price * item.quantity)}원
                   </span>
@@ -66,8 +66,11 @@ export default function OrderComplete() {
             <div className={styles.summaryFooter}>
               <div className={styles.shippingInfo}>
                 <span>배송지</span>
-                <span>{order.shippingName} · {order.shippingAddress}</span>
+                <span>
+                  {order.shippingName} · {order.shippingAddress}
+                </span>
               </div>
+
               <div className={styles.totalRow}>
                 <span>결제 금액</span>
                 <strong>{formatPrice(order.totalPrice)}원</strong>
@@ -79,10 +82,12 @@ export default function OrderComplete() {
         <p className={styles.message}>
           주문 확인 및 배송 상태는 마이페이지에서 확인하실 수 있습니다.
         </p>
+
         <div className={styles.actions}>
           <Link to="/mypage/orders">
             <Button variant="outline">주문 내역 보기</Button>
           </Link>
+
           <Link to="/products">
             <Button>쇼핑 계속하기</Button>
           </Link>

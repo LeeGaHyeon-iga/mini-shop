@@ -1,47 +1,35 @@
-import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import type { Order } from '../types';
-import { orderApi, getImageUrl } from '../utils/api';
-import { formatPrice } from '../utils/cart';
-import { ORDER_STATUS_LABELS, ORDERS_PER_PAGE } from '../utils/constants';
-import { Spinner, Button } from '../components/common';
-import styles from './Orders.module.css';
+import { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { orderApi, getImageUrl } from "../utils/api";
+import { formatPrice } from "../utils/cart";
+import { ORDER_STATUS_LABELS, ORDERS_PER_PAGE } from "../utils/constants";
+import { Spinner, Button } from "../components/common";
+import styles from "./Orders.module.css";
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  return new Date(dateString).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await orderApi.getAll({
-          page,
-          pageSize: ORDERS_PER_PAGE,
-        });
-        setOrders(response.items);
-        setTotalPages(response.totalPages);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '주문 내역을 불러오는데 실패했습니다');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["orders", page],
+    queryFn: () =>
+      orderApi.getAll({
+        page,
+        pageSize: ORDERS_PER_PAGE,
+      }),
+  });
 
-    fetchOrders();
-  }, [page]);
+  const orders = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   return (
     <div className={styles.container}>
@@ -52,19 +40,27 @@ export default function Orders() {
           <NavLink
             to="/mypage"
             end
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             내 정보
           </NavLink>
+
           <NavLink
             to="/mypage/orders"
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             주문 내역
           </NavLink>
+
           <NavLink
             to="/mypage/wishlist"
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) =>
+              `${styles.navLink} ${isActive ? styles.active : ""}`
+            }
           >
             찜 목록
           </NavLink>
@@ -74,12 +70,16 @@ export default function Orders() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>주문 내역</h2>
 
-            {loading ? (
+            {isLoading ? (
               <Spinner />
-            ) : error ? (
+            ) : isError ? (
               <div className={styles.error}>
-                <p>{error}</p>
-                <Button onClick={() => setPage(1)}>다시 시도</Button>
+                <p>
+                  {error instanceof Error
+                    ? error.message
+                    : "주문 내역을 불러오는데 실패했습니다"}
+                </p>
+                <Button onClick={() => refetch()}>다시 시도</Button>
               </div>
             ) : orders.length === 0 ? (
               <div className={styles.empty}>
@@ -95,14 +95,17 @@ export default function Orders() {
                     <div key={order.id} className={styles.order}>
                       <div className={styles.orderHeader}>
                         <div>
-                          <span className={styles.orderId}>주문번호: {order.id}</span>
+                          <span className={styles.orderId}>
+                            주문번호: {order.id}
+                          </span>
                           <span className={styles.orderDate}>
                             {formatDate(order.createdAt)}
                           </span>
                         </div>
+
                         <span
                           className={`${styles.status} ${
-                            styles[order.status] || ''
+                            styles[order.status] || ""
                           }`}
                         >
                           {ORDER_STATUS_LABELS[order.status] || order.status}
@@ -116,8 +119,11 @@ export default function Orders() {
                               src={getImageUrl(item.image)}
                               alt={item.productName}
                               className={styles.itemImage}
-                              onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
                             />
+
                             <div className={styles.itemInfo}>
                               <span className={styles.itemName}>
                                 {item.productName}
@@ -128,6 +134,7 @@ export default function Orders() {
                             </div>
                           </div>
                         ))}
+
                         {order.items.length > 2 && (
                           <p className={styles.moreItems}>
                             외 {order.items.length - 2}개 상품
@@ -153,11 +160,15 @@ export default function Orders() {
                     >
                       이전
                     </button>
+
                     <span className={styles.pageInfo}>
                       {page} / {totalPages}
                     </span>
+
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={page === totalPages}
                       className={styles.pageButton}
                     >
