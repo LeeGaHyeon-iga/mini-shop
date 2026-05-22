@@ -49,6 +49,7 @@ VITE_API_URL=http://54.180.25.65:8001
 ```
 
 팀별로 다른 포트를 사용합니다:
+
 - 팀 1: 포트 8001
 - 팀 2: 포트 8002
 - 팀 3: 포트 8003
@@ -88,13 +89,13 @@ src/
 
 ## Before vs After 비교
 
-| 기능 | Before (현재) | After (강의 후) |
-|------|--------------|-----------------|
-| 데이터 페칭 | useState + useEffect | React Query |
-| 상태 관리 | Context API | Zustand |
-| 폼 관리 | useState + 수동 검증 | React Hook Form + Zod |
-| 스타일링 | CSS Modules | Tailwind CSS |
-| 테스트 | 없음 | Vitest + React Testing Library |
+| 기능        | Before (현재)        | After (강의 후)                |
+| ----------- | -------------------- | ------------------------------ |
+| 데이터 페칭 | useState + useEffect | React Query                    |
+| 상태 관리   | Context API          | Zustand                        |
+| 폼 관리     | useState + 수동 검증 | React Hook Form + Zod          |
+| 스타일링    | CSS Modules          | Tailwind CSS                   |
+| 테스트      | 없음                 | Vitest + React Testing Library |
 
 ## 학습 목표
 
@@ -105,3 +106,8 @@ src/
 3. **React Hook Form + Zod**: 폼 관리와 스키마 기반 유효성 검증
 4. **Tailwind CSS**: 유틸리티 퍼스트 CSS 프레임워크
 5. **테스트**: 컴포넌트 테스트 작성
+
+## 기타 사항
+
+05.22
+zustand 작업 후 페이지가 열리지 않는 문제 발생..

@@ -1,32 +1,43 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { formatPrice } from '../utils/cart';
-import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
-import CartItem from '../components/cart/CartItem';
-import { Button } from '../components/common';
-import styles from './Cart.module.css';
+import { Link, useNavigate } from "react-router-dom";
+import { useShallow } from "zustand/react/shallow";
+import useCartStore from "../stores/cartStore";
+import { useAuth } from "../contexts/AuthContext";
+import { formatPrice, getDiscountedPrice } from "../utils/cart";
+import { FREE_SHIPPING_THRESHOLD } from "../utils/constants";
+import CartItem from "../components/cart/CartItem";
+import { Button } from "../components/common";
+import styles from "./Cart.module.css";
 
 export default function Cart() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const {
-    items,
-    subtotal,
-    shippingFee,
-    total,
-    updateQuantity,
-    removeItem,
-    clearCart,
-  } = useCart();
+  const { items, updateQuantity, removeItem, clearCart } = useCartStore(
+    useShallow((state) => ({
+      items: state.items,
+      updateQuantity: state.updateQuantity,
+      removeItem: state.removeItem,
+      clearCart: state.clearCart,
+    })),
+  );
+
+  const subtotal = items.reduce((sum, item) => {
+    const price = getDiscountedPrice(item.product.price, item.product.discount);
+
+    return sum + price * item.quantity;
+  }, 0);
+
+  const shippingFee =
+    subtotal === 0 ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3000;
+
+  const total = subtotal + shippingFee;
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      alert('로그인이 필요합니다.');
-      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+      alert("로그인이 필요합니다.");
+      navigate("/login", { state: { from: { pathname: "/checkout" } } });
       return;
     }
-    navigate('/checkout');
+    navigate("/checkout");
   };
 
   if (items.length === 0) {
@@ -72,12 +83,12 @@ export default function Cart() {
 
         <div className={styles.summary}>
           <h2 className={styles.summaryTitle}>주문 요약</h2>
-          
+
           <div className={styles.summaryRow}>
             <span>상품 금액</span>
             <span>{formatPrice(subtotal)}원</span>
           </div>
-          
+
           <div className={styles.summaryRow}>
             <span>배송비</span>
             <span>
@@ -88,9 +99,9 @@ export default function Cart() {
               )}
             </span>
           </div>
-          
+
           <div className={styles.divider} />
-          
+
           <div className={`${styles.summaryRow} ${styles.total}`}>
             <span>총 결제 금액</span>
             <span>{formatPrice(total)}원</span>

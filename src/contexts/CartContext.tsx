@@ -4,15 +4,15 @@ import {
   useState,
   useEffect,
   ReactNode,
-} from 'react';
-import type { Product, CartItem } from '../types';
+} from "react";
+import type { Product, CartItem } from "../types";
 import {
   calculateSubtotal,
   calculateShippingFee,
   calculateTotal,
   calculateTotalQuantity,
-} from '../utils/cart';
-import { MIN_QUANTITY, MAX_QUANTITY } from '../utils/constants';
+} from "../utils/cart";
+import { MIN_QUANTITY, MAX_QUANTITY } from "../utils/constants";
 
 interface CartContextType {
   items: CartItem[];
@@ -20,7 +20,7 @@ interface CartContextType {
   subtotal: number;
   shippingFee: number;
   total: number;
-  addItem: (product: Product, quantity?: number) => void;
+  addItem: (item: Product, quantity?: number) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
@@ -29,7 +29,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const CART_STORAGE_KEY = 'mini-shop-cart';
+const CART_STORAGE_KEY = "mini-shop-cart";
 
 function loadCartFromStorage(): CartItem[] {
   try {
@@ -59,14 +59,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (product: Product, quantity: number = 1) => {
     setItems((prev) => {
       const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id
+        (item) => item.product.id === product.id,
       );
 
       if (existingIndex >= 0) {
         const newItems = [...prev];
         const newQuantity = Math.min(
           newItems[existingIndex].quantity + quantity,
-          MAX_QUANTITY
+          MAX_QUANTITY,
         );
         newItems[existingIndex] = {
           ...newItems[existingIndex],
@@ -89,14 +89,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const clampedQuantity = Math.min(Math.max(quantity, MIN_QUANTITY), MAX_QUANTITY);
+    const clampedQuantity = Math.min(
+      Math.max(quantity, MIN_QUANTITY),
+      MAX_QUANTITY,
+    );
 
     setItems((prev) =>
       prev.map((item) =>
         item.product.id === productId
           ? { ...item, quantity: clampedQuantity }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -131,7 +134,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error("useCart must be used within a CartProvider");
   }
   return context;
 }

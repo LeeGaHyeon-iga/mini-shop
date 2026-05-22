@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { productApi, wishlistApi, getImageUrl } from "../utils/api";
 import { formatPrice, getDiscountedPrice } from "../utils/cart";
-import { useCart } from "../contexts/CartContext";
+import useCartStore from "../stores/cartStore";
 import { useAuth } from "../contexts/AuthContext";
 import { Button, Spinner } from "../components/common";
 import { MIN_QUANTITY, MAX_QUANTITY } from "../utils/constants";
@@ -15,7 +15,8 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { addItem, isInCart } = useCart();
+  const addItem = useCartStore((state) => state.addItem);
+  const isInCart = useCartStore((state) => state.isInCart);
   const { isAuthenticated } = useAuth();
 
   const productId = Number(id);

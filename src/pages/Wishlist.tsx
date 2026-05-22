@@ -4,12 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { WishlistItem } from "../types";
 import { wishlistApi, getImageUrl } from "../utils/api";
 import { formatPrice, getDiscountedPrice } from "../utils/cart";
-import { useCart } from "../contexts/CartContext";
 import { Spinner, Button } from "../components/common";
 import styles from "./Wishlist.module.css";
+import useCartStore from "../stores/cartStore";
 
 export default function Wishlist() {
-  const { addItem } = useCart();
+  const { addItem } = useCartStore();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch } = useQuery({

@@ -1,5 +1,5 @@
 // 카테고리 타입
-export type Category = 'electronics' | 'clothing' | 'food' | 'etc';
+export type Category = "electronics" | "clothing" | "food" | "etc";
 
 // 상품
 export interface Product {
@@ -16,7 +16,7 @@ export interface Product {
 }
 
 // 상품 목록용 간략 정보
-export type ProductSummary = Pick<Product, 'id' | 'name' | 'price' | 'image'>;
+export type ProductSummary = Pick<Product, "id" | "name" | "price" | "image">;
 
 // 장바구니 아이템
 export interface CartItem {
@@ -34,7 +34,12 @@ export interface User {
 }
 
 // 주문 상태
-export type OrderStatus = 'pending' | 'paid' | 'shipping' | 'delivered' | 'cancelled';
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "shipping"
+  | "delivered"
+  | "cancelled";
 
 // 주문 아이템
 export interface OrderItem {

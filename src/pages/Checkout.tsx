@@ -1,11 +1,13 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../contexts/AuthContext';
-import { orderApi, getImageUrl } from '../utils/api';
-import { formatPrice, getDiscountedPrice } from '../utils/cart';
-import { Button, Input } from '../components/common';
-import styles from './Checkout.module.css';
+import { useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import useCartStore from "../stores/cartStore";
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "../utils/constants";
+import { useAuth } from "../contexts/AuthContext";
+import { orderApi, getImageUrl } from "../utils/api";
+import { formatPrice, getDiscountedPrice } from "../utils/cart";
+import { Button, Input } from "../components/common";
+import styles from "./Checkout.module.css";
+import { useShallow } from "zustand/shallow";
 
 interface FormErrors {
   name?: string;
@@ -16,13 +18,26 @@ interface FormErrors {
 export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items, subtotal, shippingFee, total, clearCart } = useCart();
+  const { items, getTotalPrice, clearCart } = useCartStore(
+    useShallow((state) => ({
+      items: state.items,
+      getTotalPrice: state.getTotalPrice,
+      clearCart: state.clearCart,
+    })),
+  );
 
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
-  const [detail, setDetail] = useState('');
-  const [memo, setMemo] = useState('');
+  const subtotal = getTotalPrice();
+
+  const shippingFee =
+    subtotal === 0 ? 0 : subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+
+  const total = subtotal + shippingFee;
+
+  const [name, setName] = useState(user?.name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [address, setAddress] = useState(user?.address || "");
+  const [detail, setDetail] = useState("");
+  const [memo, setMemo] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isOrderComplete, setIsOrderComplete] = useState(false);
@@ -31,17 +46,17 @@ export default function Checkout() {
     const newErrors: FormErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = '받는 분 이름을 입력해주세요';
+      newErrors.name = "받는 분 이름을 입력해주세요";
     }
 
     if (!phone.trim()) {
-      newErrors.phone = '연락처를 입력해주세요';
+      newErrors.phone = "연락처를 입력해주세요";
     } else if (!/^[0-9-]+$/.test(phone)) {
-      newErrors.phone = '올바른 연락처 형식이 아닙니다';
+      newErrors.phone = "올바른 연락처 형식이 아닙니다";
     }
 
     if (!address.trim()) {
-      newErrors.address = '주소를 입력해주세요';
+      newErrors.address = "주소를 입력해주세요";
     }
 
     setErrors(newErrors);
@@ -55,7 +70,7 @@ export default function Checkout() {
 
     try {
       setIsLoading(true);
-      
+
       const orderItems = items.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -75,20 +90,20 @@ export default function Checkout() {
       if (response.success) {
         setIsOrderComplete(true);
         clearCart();
-        navigate('/order/complete', {
+        navigate("/order/complete", {
           state: { orderId: response.order.id },
           replace: true,
         });
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : '주문에 실패했습니다');
+      alert(err instanceof Error ? err.message : "주문에 실패했습니다");
     } finally {
       setIsLoading(false);
     }
   };
 
   if (!isOrderComplete && items.length === 0) {
-    navigate('/cart', { replace: true });
+    navigate("/cart", { replace: true });
     return null;
   }
 
@@ -97,7 +112,11 @@ export default function Checkout() {
       <h1 className={styles.title}>주문/결제</h1>
 
       <div className={styles.content}>
-        <form id="checkout-form" onSubmit={handleSubmit} className={styles.form}>
+        <form
+          id="checkout-form"
+          onSubmit={handleSubmit}
+          className={styles.form}
+        >
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>배송 정보</h2>
 
@@ -159,19 +178,29 @@ export default function Checkout() {
             <h2 className={styles.sectionTitle}>주문 상품</h2>
             <div className={styles.orderItems}>
               {items.map((item) => (
-                  <div key={item.product.id} className={styles.orderItem}>
+                <div key={item.product.id} className={styles.orderItem}>
                   <img
                     src={getImageUrl(item.product.image)}
                     alt={item.product.name}
                     className={styles.itemImage}
-                    onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                    }}
                   />
                   <div className={styles.itemInfo}>
                     <span className={styles.itemName}>{item.product.name}</span>
-                    <span className={styles.itemQty}>수량: {item.quantity}</span>
+                    <span className={styles.itemQty}>
+                      수량: {item.quantity}
+                    </span>
                   </div>
                   <span className={styles.itemPrice}>
-                    {formatPrice(getDiscountedPrice(item.product.price, item.product.discount) * item.quantity)}원
+                    {formatPrice(
+                      getDiscountedPrice(
+                        item.product.price,
+                        item.product.discount,
+                      ) * item.quantity,
+                    )}
+                    원
                   </span>
                 </div>
               ))}
