@@ -1,16 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useCart } from '../../contexts/CartContext';
-import styles from './Header.module.css';
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import styles from "./Header.module.css";
+import useCartStore from "../../stores/cartStore";
 
 export default function Header() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
-  const { totalQuantity } = useCart();
+  const totalQuantity = useCartStore((state) =>
+    state.items.reduce((sum, item) => sum + item.quantity, 0),
+  );
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -35,7 +37,9 @@ export default function Header() {
         <div className={styles.auth}>
           {isAuthenticated ? (
             <>
-              <span className={styles.userName}>{user?.name}님 반갑습니다!</span>
+              <span className={styles.userName}>
+                {user?.name}님 반갑습니다!
+              </span>
               <Link to="/mypage" className={styles.mypageLink}>
                 마이페이지
               </Link>
