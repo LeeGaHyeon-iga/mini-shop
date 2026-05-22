@@ -1,8 +1,12 @@
-import { useState, FormEvent } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button, Input } from '../components/common';
-import styles from './Auth.module.css';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+import { useState, FormEvent } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Button, Input } from "../components/common";
+import styles from "./Auth.module.css";
 
 interface LocationState {
   from?: { pathname: string };
@@ -13,43 +17,38 @@ export default function Login() {
   const location = useLocation();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState('');
+  const loginSchema = z.object({
+    email: z.string().min(1, "이메일을 입력하세요").email("이메일 형식 오류"),
+    password: z.string().min(1, "비밀번호를 입력하세요"),
+  });
 
-  const from = (location.state as LocationState)?.from?.pathname || '/';
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+
+  const from = (location.state as LocationState)?.from?.pathname || "/";
+  type LoginInput = z.infer<typeof loginSchema>;
 
   const validate = (): boolean => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email.trim()) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = '올바른 이메일 형식이 아닙니다';
-    }
-
-    if (!password) {
-      newErrors.password = '비밀번호를 입력해주세요';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setApiError('');
-
-    if (!validate()) return;
+    const {
+      register,
+      handleSubmit,
+      formState: { errors, isSubmitting },
+    } = useForm<LoginInput>({
+      resolver: zodResolver(loginSchema),
+    });
+    const onSubmit = async (data: LoginInput) => {
+      await login(data);
+    };
 
     try {
       setIsLoading(true);
       await login({ email, password });
       navigate(from, { replace: true });
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : '로그인에 실패했습니다');
+      setApiError(err instanceof Error ? err.message : "로그인에 실패했습니다");
     } finally {
       setIsLoading(false);
     }
